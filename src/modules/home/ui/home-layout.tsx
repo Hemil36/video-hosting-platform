@@ -12,9 +12,9 @@ export const HomeLayout = ({children} : LayoutProps) => {
 
         <div className="p-4  w-full">
             <HomeNavbar />
-            <div className=" flex min-h-screen pt-[4rem]">
+            <div className=" flex min-h-screen  pt-[4rem]">
                 <HomeSidebar />
-                <main className=" flex-1 overflow-y-auto>
+                <main className=" flex-1 overflow-y-auto
                 ">
 
                 {children}
