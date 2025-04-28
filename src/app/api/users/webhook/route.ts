@@ -87,7 +87,7 @@ export async function POST(req: Request) {
         .update(users)
         .set({
             name: `${first_name} ${last_name}`,
-            image_url: image_url,
+            imageUrl: image_url,
         })
         .where(eq(users.clerkId, id));  // Use clerkId to match with Clerk's id
       
