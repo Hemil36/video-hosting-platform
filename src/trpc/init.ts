@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { cache } from 'react';
 
 import { ratelimit } from '@/lib/ratelimit';
+import SuperJSON from 'superjson';
 export const createTRPCContext = cache(async () => {
   const {userId} = await auth();
   /**
@@ -23,7 +24,7 @@ const t = initTRPC.context<CreateTRPCContext>().create({
   /**
    * @see https://trpc.io/docs/server/data-transformers
    */
-  // transformer: superjson,
+  transformer: SuperJSON,
 });
 // Base router and procedure helpers
 
@@ -35,8 +36,8 @@ export const protectedProcedure = t.procedure.use(async ({ ctx,next }) => {
     throw new TRPCError({code : 'UNAUTHORIZED'});
   }
 
+  
   const [data] = await db.select().from(users).where(eq(users.clerkId, ctx.clerkUserId));
-
   if (!data) {
     throw new TRPCError({code : 'UNAUTHORIZED'});
   }
@@ -46,6 +47,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx,next }) => {
     throw new TRPCError({code : 'TOO_MANY_REQUESTS'});
   }
 
+  console.log("Authenticaed user", data.id);  
 
   return next({
     ctx: {

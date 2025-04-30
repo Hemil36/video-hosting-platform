@@ -1,9 +1,24 @@
 import { trpc } from "@/trpc/server";
-const page = async () => {
-  const data= await trpc.hello({text: 'world'})
-  return (
-    <div>page : {data.greeting}</div>
-  )
-}
+import { HydrateClient } from "@/trpc/server";
+import { HomeView } from "@/modules/home/ui/views/homeView";
+export const dynamic = "force-dynamic"; // Forces this page to always be SSR
 
-export default page
+interface PageProps {
+  searchParams: Promise<{
+    categoryId: string;
+  }>;
+}
+const page = async ({ searchParams }: PageProps) => {
+  const { categoryId } = await searchParams;
+  void trpc.categories.getMany.prefetch();
+
+  return (
+    <>
+      <HydrateClient>
+        <HomeView categoryId={categoryId} />
+      </HydrateClient>
+    </>
+  );
+};
+
+export default page;

@@ -1,4 +1,4 @@
-import { HomeLayout } from "@/modules/home/ui/home-layout";
+import { StudioLayout } from "@/modules/studio/ui/studio-layout";
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -8,9 +8,9 @@ const layout = ({children} : LayoutProps) => {
   return (
     <div>
       
-        <HomeLayout>
+        <StudioLayout>
         {children}
-        </HomeLayout>
+        </StudioLayout>
 
     </div>
   )
