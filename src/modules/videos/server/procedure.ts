@@ -4,8 +4,28 @@ import { mux } from "@/lib/mux";
 import {createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 export const videosRouter = createTRPCRouter({
+    delete : protectedProcedure.input(z.object({
+        id: z.string().uuid(),
+    })).mutation(async ({ctx,input}) => {
+        const { id : userId } = ctx.data;
+        const { id } = input;
+        if(!id){
+            throw new TRPCError({code: "BAD_REQUEST", message: "Video id is required"});
+        }
+        const [video] = await db.delete(videos).where(
+            and(
+                eq(videos.userId, userId),
+                eq(videos.id, id)
+            )
+        ).returning();
+        if(!video) {
+            throw new TRPCError({code: "NOT_FOUND"});
+        }
+        return video;
+    }),
     update :protectedProcedure.input(videoSchema).mutation(async ({ctx,input}) => {
         const { id : userId } = ctx.data;
         const { id, ...data } = input;
