@@ -1,24 +1,52 @@
-"use client"
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/trpc/client";
-import {  PlusIcon } from "lucide-react";
+import { Loader2Icon, PlusIcon } from "lucide-react";
+import { toast } from "sonner";
+import { VideoUploader } from "../studio-video-uploader";
+import { ResponsiveModel } from "@/components/responsive-model";
+import { useState } from "react";
 
 export const StudioUploadModel = () => {
-    const create = trpc.videos.create.useMutation({
-        onError: (error) => {
-            console.error("Mutation error:", error);
-            alert(error.message);
-        },
-        onSuccess: (data) => {
-            console.log("Mutation success:", data);
-        }
-    });
-    
-    return(
-       <Button  variant="secondary" onClick={()=>{console.log("clicked");create.mutate()}}>
-        <PlusIcon />
-        Uploa
-       </Button>
-    )
-}
+    const [isOpen, setIsOpen] = useState(true);
+
+  const utils = trpc.useUtils();
+  const create = trpc.videos.create.useMutation({
+    onError: (error) => {
+      toast.error("Error creating video: " + error.message);
+    },
+    onSuccess: () => {
+      toast.success("Video created successfully!");
+      utils.studio.getMany.invalidate();
+    },
+  });
+
+  return (
+    <>
+      <ResponsiveModel
+        open={!!create.data?.url}
+        title="Upload Video"
+        onOpenChange={()=> create.reset()}
+      >
+        {create.data?.url ? <VideoUploader endpoint={create.data.url}         onSuccess={()=>{}}
+        /> : <Loader2Icon />}
+       
+      </ResponsiveModel>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          create.mutate();
+        }}
+        disabled={create.isPending}
+      >
+        {create.isPending ? (
+          <Loader2Icon className=" animate-spin" />
+        ) : (
+          <PlusIcon />
+        )}
+        Create
+      </Button>
+    </>
+  );
+};

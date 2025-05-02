@@ -47,7 +47,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx,next }) => {
     throw new TRPCError({code : 'TOO_MANY_REQUESTS'});
   }
 
-  console.log("Authenticaed user", data.id);  
+  // console.log("Authenticaed user", data.id);  
 
   return next({
     ctx: {
