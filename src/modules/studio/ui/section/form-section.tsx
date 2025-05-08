@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Form,
   FormControl,
@@ -25,13 +26,16 @@ import { VideoPlayer } from "@/modules/videos/ui/video-player";
 import { VideoThumbnail } from "@/modules/videos/ui/video-thumbnail";
 import { trpc } from "@/trpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CopyCheckIcon, CopyIcon, Globe2Icon, LockIcon } from "lucide-react";
+import { CopyCheckIcon, CopyIcon, Globe2Icon, LockIcon, MoreVerticalIcon } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { Suspense, use, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Suspense,  useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ThumbnailUploadModel } from "../thumbnail-upload-model";
 
 interface FormsectionProps {
   videoId: string;
@@ -54,7 +58,9 @@ export const FormSectionSkeleton = () => {
 export const FormSectionSuspense = ({ videoId }: FormsectionProps) => {
   const [categories] = trpc.categories.getMany.useSuspenseQuery();
   const [video] = trpc.studio.getOne.useSuspenseQuery({ id: videoId });
+  const [thumbnailOpen, setThumbnailOpen] = useState(false);
   const [isCopied , setisCopy] = useState(false);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof videoSchema>>({
     resolver: zodResolver(videoSchema),
@@ -68,6 +74,42 @@ export const FormSectionSuspense = ({ videoId }: FormsectionProps) => {
       utils.studio.getOne.invalidate({ id: videoId });
       utils.categories.getMany.invalidate();
       toast.success("Video updated successfully");
+    },
+    onError: () => {
+      toast.error("Error updating video");
+    },
+  });
+
+  const generatethumbnail = trpc.videos.generateThumbnail.useMutation({
+    onSuccess: () => {     
+      toast.success("Thumbnail generated successfully");
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
+
+  const restoreThumbnail = trpc.videos.restoreThumnail.useMutation({
+    onSuccess: () => {
+      utils.studio.getOne.invalidate({ id: videoId });
+      utils.categories.getMany.invalidate();
+      toast.success("Thumbnail restored successfully");
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
+
+  const restore = async (id : string )=>{
+     restoreThumbnail.mutate({ id });
+  }
+
+  const remove = trpc.videos.delete.useMutation({
+    onSuccess: () => {
+
+      utils.categories.getMany.invalidate();
+      toast.success("Video removed");
+      router.push("/studio");
     },
     onError: () => {
       toast.error("Error updating video");
@@ -88,6 +130,9 @@ export const FormSectionSuspense = ({ videoId }: FormsectionProps) => {
   }
 const fullUrl = `${process.env.VERCEL_URL || "http://localhost:3000"}/videos/${videoId}`;
   return (
+    <>
+                    <ThumbnailUploadModel videoId={videoId} open={thumbnailOpen} onOpenChange={setThumbnailOpen}/>
+
     <div className="space-y-6">
       <Card className="p-6">
         <div className="flex  gap-6">
@@ -238,6 +283,40 @@ const fullUrl = `${process.env.VERCEL_URL || "http://localhost:3000"}/videos/${v
                   </FormItem>
                 )}
               />
+
+<FormField
+                control={form.control}
+                name="thumbnailUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Thumbnail</FormLabel>
+
+<div className="relative group w-[200px] h-[120px] p-4">
+      {/* Thumbnail */}
+      <Image
+        src={video.thumbnailUrl || "./place-holder.svg"}
+        alt="Thumbnail"
+        layout="fill"
+        objectFit="cover"
+        className="rounded-md"
+      />
+
+      {/* Dots menu on hover */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" className="text-white hover:bg-background rounded-full p-1">
+              <MoreVerticalIcon className="w-5 h-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={()=>setThumbnailOpen(true)}>Change</DropdownMenuItem>
+            <DropdownMenuItem onClick={()=>generatethumbnail.mutate({videoId : video.id})}> Ai-Generated</DropdownMenuItem>
+            <DropdownMenuItem onClick={()=> restore(video.id)}>Restore</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div> 
               
               <Button
                 type="submit"
@@ -246,11 +325,26 @@ const fullUrl = `${process.env.VERCEL_URL || "http://localhost:3000"}/videos/${v
               >
                 Save changes
               </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={remove.isPending}
+                className="mx-4"
+                onClick={() => {
+                  remove.mutate({ id: videoId });
+                }} >
+                Delete Video
+                </Button>
+                </FormItem>
+                )}
+              />
+
             </form>
           </Form>
         </div>
       </Card>
       <div className="text-xs text-muted-foreground">Video ID: {videoId}</div>
     </div>
+    </>
   );
 };

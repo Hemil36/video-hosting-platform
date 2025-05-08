@@ -29,7 +29,7 @@ export const ResponsiveModel = ({ children, open, title, onOpenChange }: Respons
         
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Upload Video</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
             </DialogDescription>
           </DialogHeader>

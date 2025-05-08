@@ -8,7 +8,9 @@ import { z } from "zod";
 export const studiorouter = createTRPCRouter({
     getOne: protectedProcedure
 .input(z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid({
+    message: "Invalid video id",
+  }),
 }))
 .query(async ({ctx,input}) => {
   const { id } = input;
